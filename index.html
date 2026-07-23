@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Aula Pro</title>
+    <!-- CDN de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-800 min-h-screen pb-24">
+
+    <!-- Contenedor Principal (Estilo App Móvil) -->
+    <main class="max-w-md mx-auto bg-white min-h-screen shadow-md flex flex-col justify-between relative">
+        
+        <!-- Encabezado Fijo -->
+        <header class="bg-indigo-600 text-white px-6 py-5 sticky top-0 shadow-sm z-10 rounded-b-2xl">
+            <h1 class="text-xl font-bold tracking-tight text-center">Control de Aula Pro</h1>
+            <p class="text-indigo-100 text-xs text-center mt-1">Gestión Avanzada de Aulas</p>
+        </header>
+
+        <!-- PESTAÑA 1: REGISTRO DIARIO -->
+        <div id="vista-registro" class="px-5 py-6 space-y-6 flex-grow">
+            <!-- Selector de Aula y Fecha -->
+            <div class="bg-slate-100 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <label for="reg-seccion" class="text-sm font-semibold text-slate-600">Seleccionar Aula:</label>
+                    <select id="reg-seccion" onchange="cargarAlumnosRegistro()" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 w-48"></select>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label for="fecha" class="text-sm font-semibold text-slate-600">Fecha de hoy:</label>
+                    <input type="date" id="fecha" class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700">
+                </div>
+            </div>
+
+            <!-- Sección: Lista de Alumnos -->
+            <section class="space-y-3">
+                <h2 class="text-sm font-bold tracking-wide text-slate-400 uppercase mb-2">Pase de Asistencia</h2>
+                <div id="lista-alumnos" class="space-y-2.5">
+                    <!-- Los estudiantes se inyectan dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Sección: Bitácora -->
+            <section class="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-4">
+                <h2 class="text-sm font-bold tracking-wide text-slate-400 uppercase">Anotación en Bitácora</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="select-alumno" class="block text-xs font-medium text-slate-500 mb-1">Seleccionar Estudiante</label>
+                        <select id="select-alumno" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Ninguno seleccionado --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="tipo-nota" class="block text-xs font-medium text-slate-500 mb-1">Categoría</label>
+                        <select id="tipo-nota" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Academico">Progreso Académico</option>
+                            <option value="Conducta">Observación / Conducta</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="nota-detalle" class="block text-xs font-medium text-slate-500 mb-1">Detalle de la anotación</label>
+                        <textarea id="nota-detalle" placeholder="Describe el avance..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm h-20 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <div class="pt-2">
+                <button onclick="guardarDatos()" class="w-full bg-indigo-600 active:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl transition duration-150 shadow-sm shadow-indigo-200 text-center text-sm tracking-wide">
+                    Guardar Registro del Día
+                </button>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 2: HISTORIAL Y ESTADÍSTICAS -->
+        <div id="vista-historial" class="px-5 py-6 space-y-6 flex-grow hidden">
+            <!-- Selector y Buscador -->
+            <div class="bg-slate-100 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <label for="hist-seccion" class="text-sm font-semibold text-slate-600">Filtrar por Aula:</label>
+                    <select id="hist-seccion" onchange="cargarHistorialEnPantalla()" class="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 w-48"></select>
+                </div>
+                <div>
+                    <input type="text" id="hist-buscador" onkeyup="cargarHistorialEnPantalla()" placeholder="Buscar alumno por nombre..." class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Controles de Historial -->
+            <section class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold tracking-wide text-slate-400 uppercase">Seguimiento General</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportarCSV()" class="text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition">Exportar CSV</button>
+                        <button onclick="borrarTodo()" class="text-xs font-semibold text-rose-500 hover:text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg transition">Borrar Todo</button>
+                    </div>
+                </div>
+                <div id="contenedor-historial" class="space-y-4"></div>
+            </section>
+        </div>
+
+        <!-- PESTAÑA 3: ADMINISTRACIÓN / CONFIGURACIÓN -->
+        <div id="vista-admin" class="px-5 py-6 space-y-6 flex-grow hidden">
+            <!-- Bloque Agregar Secciones -->
+            <section class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <h2 class="text-sm font-bold tracking-wide text-indigo-600 uppercase">1. Crear Nueva Aula / Sección</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="nuevo-aula" placeholder="Ej: 2do Grado A" class="flex-grow bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="agregarAula()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold active:bg-indigo-700">Crear</button>
+                </div>
+            </section>
+
+            <!-- Panel de Control Desplegable por Aula -->
+            <section class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <h2 class="text-sm font-bold tracking-wide text-indigo-600 uppercase">2. Configurar Aula Seleccionada</h2>
+                </div>
+                
+                <div>
+                    <label for="select-aula-admin" class="block text-xs font-medium text-slate-500 mb-1">Selecciona el Aula a gestionar:</label>
+                    <select id="select-aula-admin" onchange="renderPanelConfiguracionAula()" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <!-- Opciones cargadas dinámicamente -->
+                    </select>
+                </div>
+
+                <!-- Zona dinámica del Aula Seleccionada -->
+                <div id="panel-dinamico-aula" class="space-y-4 hidden">
+                    
+                    <!-- Formulario integrado para añadir alumno -->
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                        <span class="text-xs font-bold text-slate-500 block">Añadir Alumno a esta Aula</span>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-alumno-nombre" placeholder="Nombre del nuevo estudiante" class="flex-grow bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button onclick="agregarAlumnoAdmin()" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold active:bg-emerald-700">Añadir</button>
+                        </div>
+                    </div>
+
+                    <!-- Listado de Alumnos -->
+                    <div class="space-y-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Alumnos Inscritos</span>
+                        <div id="admin-lista-alumnos" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                            <!-- Alumnos cargados dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Eliminar Aula -->
+                    <div class="pt-2 border-t border-slate-200">
+                        <button onclick="eliminarAulaActual()" class="w-full bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 font-semibold py-2 rounded-xl text-xs transition duration-150">
+                            Eliminar esta Aula por completo
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+        </div>
+
+        <!-- Barra de Navegación Inferior Fija -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 flex justify-around py-3 z-20">
+            <button onclick="cambiarPestaña('registro')" id="nav-registro" class="flex flex-col items-center space-y-1 text-indigo-600 font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                <span class="text-[10px]">Pasar Lista</span>
+            </button>
+            <button onclick="cambiarPestaña('historial')" id="nav-historial" class="flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-600 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="text-[10px]">Historial</span>
+            </button>
+            <button onclick="cambiarPestaña('admin')" id="nav-admin" class="flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-600 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="text-[10px]">Admin</span>
+            </button>
+        </nav>
+    </main>
+
+<script>
+    document.getElementById('fecha').valueAsDate = new Date();
+
+    let aulas = JSON.parse(localStorage.getItem('aula_secciones')) || ["Sección Única"];
+    let alumnos = JSON.parse(localStorage.getItem('aula_alumnos')) || [
+        { id: "EST-1", nombre: "Thiago Mendoza", seccion: "Sección Única" },
+        { id: "EST-2", nombre: "Camila Fernandez", seccion: "Sección Única" }
+    ];
+    let estadosAsistencia = {};
+
+    function guardarEstructuraBase() {
+        localStorage.setItem('aula_secciones', JSON.stringify(aulas));
+        localStorage.setItem('aula_alumnos', JSON.stringify(alumnos));
+        actualizarSelectores();
+    }
+
+    function actualizarSelectores() {
+        const selReg = document.getElementById('reg-seccion');
+        const selHist = document.getElementById('hist-seccion');
+        const selAdmin = document.getElementById('select-aula-admin');
+        
+        const resReg = selReg.value;
+        const resHist = selHist.value;
+        const resAdmin = selAdmin.value;
+
+        selReg.innerHTML = ""; selHist.innerHTML = ""; 
+        selAdmin.innerHTML = '<option value="">-- Selecciona un Aula --</option>';
+        
+        aulas.forEach(a => {
+            selReg.innerHTML += `<option value="${a}">${a}</option>`;
+            selHist.innerHTML += `<option value="${a}">${a}</option>`;
+            selAdmin.innerHTML += `<option value="${a}">${a}</option>`;
+        });
+
+        if(resReg && aulas.includes(resReg)) selReg.value = resReg;
+        if(resHist && aulas.includes(resHist)) selHist.value = resHist;
+        if(resAdmin && aulas.includes(resAdmin)) {
+            selAdmin.value = resAdmin;
+        } else {
+            document.getElementById('panel-dinamico-aula').classList.add('hidden');
+        }
+    }
+
+    function agregarAula() {
+        const input = document.getElementById('nuevo-aula');
+        const nombre = input.value.trim();
+        if(!nombre) return alert("Escribe un nombre para el aula.");
+        if(aulas.includes(nombre)) return alert("El aula ya existe.");
+        
+        aulas.push(nombre);
+        input.value = "";
+        guardarEstructuraBase();
+        alert(`Aula "${nombre}" creada con éxito.`);
+    }
+
+    function renderPanelConfiguracionAula() {
+        const seccionSeleccionada = document.getElementById('select-aula-admin').value;
+        const panel = document.getElementById('panel-dinamico-aula');
+        const listaAlumnosAdmin = document.getElementById('admin-lista-alumnos');
+        
+        if (!seccionSeleccionada) {
+            panel.classList.add('hidden');
+            return;
+        }
+        
+        panel.classList.remove('hidden');
+        listaAlumnosAdmin.innerHTML = "";
+
+        const filtrados = alumnos.filter(al => al.seccion === seccionSeleccionada);
+
+        if(filtrados.length === 0) {
+            listaAlumnosAdmin.innerHTML = `<p class="text-xs text-slate-400 py-2 italic text-center">No hay alumnos inscritos en esta sección.</p>`;
+            return;
+        }
+
+        filtrados.forEach(alumno => {
+            const row = document.createElement('div');
+            row.className = "flex items-center justify-between p-2 bg-white border border-slate-100 rounded-lg shadow-sm text-xs";
+            row.innerHTML = `
+                <span class="font-medium text-slate-700">${alumno.nombre}</span>
+                <button onclick="eliminarAlumnoAdmin('${alumno.id}')" class="text-rose-500 hover:text-rose-700 font-bold px-2 py-1 bg-rose-50 rounded">
+                    Quitar
+                </button>
+            `;
+            listaAlumnosAdmin.appendChild(row);
+        });
+    }
+
+    function agregarAlumnoAdmin() {
+        const inputNombre = document.getElementById('admin-alumno-nombre');
+        const seccion = document.getElementById('select-aula-admin').value;
+        const nombre = inputNombre.value.trim();
+        
+        if(!nombre) return alert("Escribe el nombre del alumno.");
+
+        const nuevoId = `EST-${Date.now()}`;
+        alumnos.push({ id: nuevoId, nombre: nombre, seccion: seccion });
+        inputNombre.value = "";
+        
+        guardarEstructuraBase();
+        renderPanelConfiguracionAula();
+    }
+
+    function eliminarAlumnoAdmin(id) {
+        if (confirm("¿Estás seguro de quitar a este alumno de la sección?")) {
+            alumnos = alumnos.filter(al => al.id !== id);
+            guardarEstructuraBase();
+            renderPanelConfiguracionAula();
+        }
+    }
+
+    function eliminarAulaActual() {
+        const seccion = document.getElementById('select-aula-admin').value;
+        const totalAlumnos = alumnos.filter(al => al.seccion === seccion).length;
+
+        if (totalAlumnos > 0) {
+            if (!confirm(`El aula tiene ${totalAlumnos} alumnos registrados. Si la eliminas, también se perderá su asignación de grupo. ¿Proceder?`)) {
+                return;
+            }
+        } else {
+            if (!confirm(`¿Deseas eliminar por completo el aula "${seccion}"?`)) return;
+        }
+
+        alumnos = alumnos.filter(al => al.seccion !== seccion);
+        aulas = aulas.filter(a => a !== seccion);
+        
+        document.getElementById('select-aula-admin').value = "";
+        guardarEstructuraBase();
+    }
+
+    function cargarAlumnosRegistro() {
+        const seccionActiva = document.getElementById('reg-seccion').value;
+        const listaDiv = document.getElementById('lista-alumnos');
+        const selectAlumno = document.getElementById('select-alumno');
+        
+        listaDiv.innerHTML = "";
+        selectAlumno.innerHTML = '<option value="">-- Ninguno seleccionado --</option>';
+
+        const filtrados = alumnos.filter(al => al.seccion === seccionActiva);
+
+        if(filtrados.length === 0) {
+            listaDiv.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay alumnos en esta aula. Regístralos o selecciónala en la pestaña Admin.</p>`;
+            return;
+        }
+
+        filtrados.forEach(alumno => {
+            if(!estadosAsistencia[alumno.id]) estadosAsistencia[alumno.id] = "Presente";
+            
+            const card = document.createElement('div');
+            card.className = "flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-xl shadow-sm";
+            
+            let btnClass = "bg-emerald-50 text-emerald-600 border-emerald-200";
+            if(estadosAsistencia[alumno.id] === "Tardanza") btnClass = "bg-amber-50 text-amber-600 border-amber-200";
+            if(estadosAsistencia[alumno.id] === "Ausente") btnClass = "bg-rose-50 text-rose-600 border-rose-200";
+
+            card.innerHTML = `
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-400">${alumno.id.substring(0, 7)}</span>
+                    <span class="text-sm font-semibold text-slate-700">${alumno.nombre}</span>
+                </div>
+                <button id="btn-status-${alumno.id}" onclick="toggleAsistencia('${alumno.id}')" class="w-24 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 border ${btnClass}">
+                    ${estadosAsistencia[alumno.id]}
+                </button>
+            `;
+            listaDiv.appendChild(card);
+
+            const option = document.createElement('option');
+            option.value = alumno.id;
+            option.textContent = alumno.nombre;
+            selectAlumno.appendChild(option);
+        });
+    }
+
+    function toggleAsistencia(id) {
+        const btn = document.getElementById(`btn-status-${id}`);
+        if (estadosAsistencia[id] === "Presente") {
+            estadosAsistencia[id] = "Tardanza";
+            btn.textContent = "Tardanza";
+            btn.className = "w-24 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-amber-50 text-amber-600 border border-amber-200";
+        } else if (estadosAsistencia[id] === "Tardanza") {
+            estadosAsistencia[id] = "Ausente";
+            btn.textContent = "Ausente";
+            btn.className = "w-24 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-rose-50 text-rose-600 border border-rose-200";
+        } else {
+            estadosAsistencia[id] = "Presente";
+            btn.textContent = "Presente";
+            btn.className = "w-24 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-emerald-50 text-emerald-600 border border-emerald-200";
+        }
+    }
+
+    function cambiarPestaña(pestaña) {
+        const vistas = { registro: 'vista-registro', historial: 'vista-historial', admin: 'vista-admin' };
+        const navs = { registro: 'nav-registro', historial: 'nav-historial', admin: 'nav-admin' };
+
+        Object.keys(vistas).forEach(k => {
+            if(k === pestaña) {
+                document.getElementById(vistas[k]).classList.remove('hidden');
+                document.getElementById(navs[k]).className = "flex flex-col items-center space-y-1 text-indigo-600 font-semibold";
+            } else {
+                document.getElementById(vistas[k]).classList.add('hidden');
+                document.getElementById(navs[k]).className = "flex flex-col items-center space-y-1 text-slate-400 hover:text-indigo-600 font-medium";
+            }
+        });
+
+        if(pestaña === 'registro') cargarAlumnosRegistro();
+        if(pestaña === 'historial') cargarHistorialEnPantalla();
+        if(pestaña === 'admin') renderPanelConfiguracionAula();
+    }
+
+    function guardarDatos() {
+        const fecha = document.getElementById('fecha').value;
+        const seccion = document.getElementById('reg-seccion').value;
+        if (!fecha || !seccion) return alert("Faltan datos clave del aula o fecha.");
+
+        const filtrados = alumnos.filter(al => al.seccion === seccion);
+        if(filtrados.length === 0) return alert("No hay alumnos asignados a esta sección para guardar.");
+
+        let registroAsistencia = filtrados.map(alumno => ({
+            id: alumno.id,
+            nombre: alumno.nombre,
+            estado: estadosAsistencia[alumno.id] || "Presente"
+        }));
+
+        const alumnoNotaId = selectAlumno.value;
+        const nombreAlumnoNota = alumnoNotaId ? alumnos.find(a => a.id === alumnoNotaId).nombre : '';
+        const tipoNota = document.getElementById('tipo-nota').value;
+        const detalleNota = document.getElementById('nota-detalle').value;
+
+        const nuevoRegistro = {
+            fecha: fecha,
+            seccion: seccion,
+            asistencia: registroAsistencia,
+            bitacora: alumnoNotaId && detalleNota.trim() !== "" ? { nombre: nombreAlumnoNota, tipo: tipoNota, detalle: detalleNota } : null
+        };
+
+        let historial = JSON.parse(localStorage.getItem('historial_aula')) || [];
+        historial = historial.filter(r => !(r.fecha === fecha && r.seccion === seccion));
+        historial.push(nuevoRegistro);
+        
+        localStorage.setItem('historial_aula', JSON.stringify(historial));
+
+        document.getElementById('nota-detalle').value = "";
+        selectAlumno.value = "";
+        alert(`¡Asistencia de la sala "${seccion}" guardada con éxito!`);
+    }
+
+    function obtenerEstiloEstado(estado) {
+        if (estado === "Presente") return "text-emerald-600 bg-emerald-50 border-emerald-100";
+        if (estado === "Tardanza") return "text-amber-600 bg-amber-50 border-amber-100";
+        return "text-rose-600 bg-rose-50 border-rose-100";
+    }
+
+    function cargarHistorialEnPantalla() {
+        const contenedor = document.getElementById('contenedor-historial');
+        contenedor.innerHTML = "";
+        
+        const seccionFiltro = document.getElementById('hist-seccion').value;
+        const textoBusqueda = document.getElementById('hist-buscador').value.toLowerCase().trim();
+        let historial = JSON.parse(localStorage.getItem('historial_aula')) || [];
+        
+        historial = historial.filter(r => r.seccion === seccionFiltro);
+
+        if (historial.length === 0) {
+            contenedor.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">Sin registros acumulados para esta aula.</p>`;
+            return;
+        }
+
+        const totalDias = historial.length;
+        let estadisticas = {};
+        alumnos.filter(al => al.seccion === seccionFiltro).forEach(al => estadisticas[al.nombre] = { presentes: 0, tardanzas: 0 });
+
+        historial.forEach(registro => {
+            registro.asistencia.forEach(al => {
+                if (estadisticas[al.nombre] !== undefined) {
+                    if (al.estado === "Presente") estadisticas[al.nombre].presentes++;
+                    if (al.estado === "Tardanza") estadisticas[al.nombre].tardanzas++;
+                }
+            });
+        });
+
+        // Crear sección de estadísticas dinámicas
+        const seccionEstadisticas = document.createElement('div');
+        seccionEstadisticas.className = "bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-2.5 mb-2";
+        seccionEstadisticas.innerHTML = `<h3 class="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">Rendimiento: ${seccionFiltro}</h3>`;
+        
+        let estadisticasRenderizadas = 0;
+
+        Object.keys(estadisticas).forEach(nombre => {
+            // Aplicar el filtro de búsqueda a las estadísticas
+            if (textoBusqueda && !nombre.toLowerCase().includes(textoBusqueda)) return;
+
+            estadisticasRenderizadas++;
+            const presentes = estadisticas[nombre].presentes;
+            const tardanzas = estadisticas[nombre].tardanzas;
+            const porcentaje = totalDias > 0 ? Math.round(((presentes + tardanzas) / totalDias) * 100) : 0;
+            const colorPorcentaje = porcentaje >= 80 ? "text-emerald-600 bg-emerald-50 border-emerald-100" : "text-rose-600 bg-rose-50 border-rose-100";
+
+            seccionEstadisticas.innerHTML += `
+                <div class="flex flex-col text-sm bg-white p-3 rounded-xl border border-indigo-100/50 shadow-sm space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold text-slate-700">${nombre}</span>
+                        <span class="px-2 py-0.5 rounded-md font-bold text-xs border ${colorPorcentaje}">${porcentaje}% Asist.</span>
+                    </div>
+                    <div class="flex gap-4 text-slate-400 text-[11px]">
+                        <span>🟢 Pres: <strong>${presentes}</strong></span>
+                        <span>🟡 Tard: <strong class="text-amber-600">${tardanzas}</strong></span>
+                        <span>Total: ${totalDias} d</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (estadisticasRenderizadas > 0) {
+            contenedor.appendChild(seccionEstadisticas);
+        } else if (textoBusqueda) {
+            contenedor.innerHTML = `<p class="text-sm text-slate-400 text-center py-8">No se encontraron alumnos con ese nombre.</p>`;
+            return;
+        }
+
+        historial.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        historial.forEach(registro => {
+            // Filtrar alumnos dentro de este día si hay una búsqueda activa
+            let alumnosDia = registro.asistencia;
+            if (textoBusqueda) {
+                alumnosDia = alumnosDia.filter(al => al.nombre.toLowerCase().includes(textoBusqueda));
+            }
+
+            // Si ningún alumno de este día coincide con la búsqueda, no renderizar el bloque del día
+            if (alumnosDia.length === 0) return; 
+
+            const bloqueDia = document.createElement('div');
+            bloqueDia.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 shadow-sm";
+            
+            let listaHTML = "";
+            alumnosDia.forEach(al => {
+                const estilo = obtenerEstiloEstado(al.estado);
+                listaHTML += `
+                    <div class="flex items-center justify-between py-1.5 text-xs border-b border-slate-100 last:border-0">
+                        <span class="font-medium text-slate-600">${al.nombre}</span>
+                        <span class="px-2 py-0.5 rounded-md font-bold border ${estilo}">${al.estado}</span>
+                    </div>
+                `;
+            });
+
+            let bitacoraHTML = "";
+            if (registro.bitacora) {
+                // Solo mostrar la bitácora si coincide con la búsqueda del alumno o no hay búsqueda
+                const coincideBitacora = textoBusqueda ? registro.bitacora.nombre.toLowerCase().includes(textoBusqueda) : true;
+                if (coincideBitacora) {
+                    bitacoraHTML = `
+                        <div class="mt-3 pt-2.5 border-t border-dashed border-slate-200 bg-amber-50/70 p-2.5 rounded-lg border border-amber-100">
+                            <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">${registro.bitacora.tipo} - ${registro.bitacora.nombre}</span>
+                            <p class="text-xs text-amber-900 mt-0.5">${registro.bitacora.detalle}</p>
+                        </div>
+                    `;
+                }
+            }
+
+            bloqueDia.innerHTML = `
+                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span class="text-sm font-bold text-indigo-600">${formatearFecha(registro.fecha)}</span>
+                </div>
+                <div class="space-y-0.5">${listaHTML}</div>
+                ${bitacoraHTML}
+            `;
+            contenedor.appendChild(bloqueDia);
+        });
+    }
+
+    // NUEVO: Función para exportar los datos en formato CSV
+    function exportarCSV() {
+        const seccionFiltro = document.getElementById('hist-seccion').value;
+        let historial = JSON.parse(localStorage.getItem('historial_aula')) || [];
+        
+        if (seccionFiltro) {
+            historial = historial.filter(r => r.seccion === seccionFiltro);
+        }
+
+        if (historial.length === 0) {
+            return alert("No hay datos registrados en esta sección para exportar.");
+        }
+
+        // Encabezados del CSV
+        let contenidoCSV = "Fecha,Seccion,Alumno,Estado,Tipo_Anotacion,Detalle_Anotacion\n";
+
+        // Ordenar del más reciente al más antiguo
+        historial.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+        historial.forEach(registro => {
+            registro.asistencia.forEach(al => {
+                let tipoNota = "";
+                let detalleNota = "";
+                
+                // Si el alumno tiene una bitácora en ese registro específico
+                if (registro.bitacora && registro.bitacora.nombre === al.nombre) {
+                    tipoNota = registro.bitacora.tipo;
+                    // Limpiar comillas dobles para no romper el formato CSV
+                    detalleNota = `"${registro.bitacora.detalle.replace(/"/g, '""')}"`;
+                }
+
+                // Armar fila
+                const fila = `${registro.fecha},${registro.seccion},${al.nombre},${al.estado},${tipoNota},${detalleNota}`;
+                contenidoCSV += fila + "\n";
+            });
+        });
+
+        // Crear enlace de descarga dinámico
+        const uriCodificada = encodeURI("data:text/csv;charset=utf-8," + contenidoCSV);
+        const enlace = document.createElement("a");
+        enlace.setAttribute("href", uriCodificada);
+        
+        const nombreArchivo = `Reporte_Asistencia_${seccionFiltro ? seccionFiltro.replace(/\s+/g, '_') : 'General'}.csv`;
+        enlace.setAttribute("download", nombreArchivo);
+        
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+    }
+
+    function borrarTodo() {
+        if (confirm("¿Borrar todo el historial de esta sección de manera permanente?")) {
+            const seccionFiltro = document.getElementById('hist-seccion').value;
+            let historial = JSON.parse(localStorage.getItem('historial_aula')) || [];
+            historial = historial.filter(r => r.seccion !== seccionFiltro);
+            localStorage.setItem('historial_aula', JSON.stringify(historial));
+            cargarHistorialEnPantalla();
+            alert("Historial de la sección borrado exitosamente.");
+        }
+    }
+
+    function formatearFecha(fechaString) {
+        const partes = fechaString.split('-');
+        return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : fechaString;
+    }
+
+    guardarEstructuraBase();
+</script>
+
+</body>
+</html>
